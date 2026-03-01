@@ -3,8 +3,8 @@
 //!
 //! # Problem
 //!
-//! Proptest's [`TestRng`](proptest::test_runner::TestRng) implements
-//! [`RngCore`](rand_core::RngCore), but it does not implement proptest's own
+//! Proptest's [`TestRng`] implements
+//! `RngCore`, but it does not implement proptest's own
 //! [`Arbitrary`] trait. This means you cannot write `any::<TestRng>()` in a
 //! `proptest!` block to get a deterministic RNG for use with crates like
 //! [`fake`](https://crates.io/crates/fake).
@@ -27,22 +27,59 @@
 //!     fn test_with_rng(mut rng in any::<ProptestRng>()) {
 //!         // Pass `rng` to any function expecting `impl Rng`:
 //!         // let email: String = SafeEmail().fake_with_rng(&mut rng);
-//!         let _: u32 = rand_core::RngCore::next_u32(&mut rng);
+//!         let _ = rng.next_u32();
 //!     }
 //! }
 //! ```
 
+use std::ops::{Deref, DerefMut};
+
 use proptest::prelude::*;
 use proptest::test_runner::TestRng;
-use rand_core::RngCore;
 
 /// A wrapper around proptest's [`TestRng`] that implements both
 /// [`Arbitrary`] and [`RngCore`].
 ///
 /// Use `any::<ProptestRng>()` in a `proptest!` block to get a deterministic,
 /// reproducible RNG that works with any crate in the `rand` ecosystem.
+///
+/// This type implements [`Deref`] and [`DerefMut`] to `TestRng`, so all
+/// `TestRng` methods are available directly.
 #[derive(Debug, Clone)]
 pub struct ProptestRng(TestRng);
+
+impl ProptestRng {
+    /// Unwraps the wrapper, returning the inner [`TestRng`].
+    pub fn into_inner(self) -> TestRng {
+        self.0
+    }
+}
+
+impl From<TestRng> for ProptestRng {
+    fn from(rng: TestRng) -> Self {
+        Self(rng)
+    }
+}
+
+impl From<ProptestRng> for TestRng {
+    fn from(rng: ProptestRng) -> Self {
+        rng.0
+    }
+}
+
+impl Deref for ProptestRng {
+    type Target = TestRng;
+
+    fn deref(&self) -> &TestRng {
+        &self.0
+    }
+}
+
+impl DerefMut for ProptestRng {
+    fn deref_mut(&mut self) -> &mut TestRng {
+        &mut self.0
+    }
+}
 
 impl Arbitrary for ProptestRng {
     type Parameters = ();
@@ -52,19 +89,5 @@ impl Arbitrary for ProptestRng {
         any::<()>()
             .prop_perturb(|_, rng| ProptestRng(rng))
             .boxed()
-    }
-}
-
-impl RngCore for ProptestRng {
-    fn next_u32(&mut self) -> u32 {
-        self.0.next_u32()
-    }
-
-    fn next_u64(&mut self) -> u64 {
-        self.0.next_u64()
-    }
-
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        self.0.fill_bytes(dest)
     }
 }

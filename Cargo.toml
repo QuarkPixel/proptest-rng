@@ -12,4 +12,3 @@ repository = "https://github.com/QuarkPixel/proptest-rng"
 
 [dependencies]
 proptest = "1"
-rand_core = "0.9"
