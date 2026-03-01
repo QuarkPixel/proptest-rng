@@ -8,6 +8,7 @@ license = "MIT"
 keywords = ["proptest", "rand", "testing", "property-based-testing", "fake"]
 categories = ["development-tools::testing"]
 readme = "README.md"
+repository = "https://github.com/QuarkPixel/proptest-rng"
 
 [dependencies]
 proptest = "1"
